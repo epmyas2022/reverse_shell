@@ -1,0 +1,9 @@
+/dist/*
+/build/*
+/modules/__pycache__/*
+__pycache__/
+.cache
+*.pyc
+*.pyo
+*.exe
+*.spec

