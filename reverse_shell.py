@@ -8,6 +8,7 @@ import base64
 import tempfile
 import platform
 import datetime
+import signal
 variablesConfig: dict = {
     "session.lhost": "localhost",
     "session.lport": 4444,
@@ -127,6 +128,12 @@ def autoexe(_):
      print(f"{Color.OKGREEN}Autoexe generated successfully{Color.DEFAULT}")
 
 
+def signal_handler(sig, frame):
+    print(f"\n{Color.OKGREEN}Come back soon :){Color.DEFAULT}")
+    exit(0)
+
+
+
 commands = {
     "help": {
         "description": "Show help message",
@@ -159,7 +166,8 @@ commands = {
 load_banner()
 while True:
   try:
-    print("reverse_shell@root> ", end="")
+    signal.signal(signal.SIGINT, signal_handler)
+    print(f"{Color.OKBLUE}reverse_shell{Color.FAIL}@root{Color.DEFAULT}> ", end="")
     command = input()
     if command == "exit":
         break
