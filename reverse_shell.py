@@ -170,6 +170,7 @@ while True:
     print(f"{Color.OKBLUE}reverse_shell{Color.FAIL}@root{Color.DEFAULT}> ", end="")
     command = input()
     if command == "exit":
+        signal_handler(None, None)
         break
 
     search = command.split(" ")[0]

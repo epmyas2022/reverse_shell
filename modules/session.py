@@ -49,19 +49,17 @@ class Session:
         self.server = Server(host, port)
         self.client_socket = None
 
-    def signar_handler(self, signum, frame):
-        print(f"\n{Color.OKGREEN}[*]{Color.DEFAULT} Exiting session...")
-        self.server.running = False
-
     def start(self):
         try:
             while self.server.running:
+
                 if not self.client_socket:
                     self.client_socket = self.server.accept()
                     if not self.client_socket:
                         continue
 
-                signal.signal(signal.SIGINT, self.signar_handler)
+                signal.signal(signal.SIGINT, signal.SIG_DFL)
+
                 print(f"{Color.OKCYAN}shell>{Color.DEFAULT} ", end="", flush=True)
                 command = input()
 
