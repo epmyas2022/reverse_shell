@@ -86,7 +86,7 @@ set session.lport 4444
 El siguient comando setea el host del servidor:
 
 ```bash
-set session.lhost
+set session.lhost 10.0.0.20
 ```
 
 El siguiente comando inicia el servidor:
