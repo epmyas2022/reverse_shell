@@ -48,4 +48,4 @@ while True:
     except Exception:
         client = None
         connect()
-        pass
+        
