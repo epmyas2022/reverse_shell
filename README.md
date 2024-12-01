@@ -147,9 +147,9 @@ autoexe
 
 ## Resultados de virustotal.com
 
-Ver resultado de [Payload]("https://www.virustotal.com/gui/file/a3529b34abafcf1bb4ae8bebb464d7a79a22ea1bd9a14dfdd53072edd2d28911")
+<a href="https://www.virustotal.com/gui/file/a3529b34abafcf1bb4ae8bebb464d7a79a22ea1bd9a14dfdd53072edd2d28911">Payload</a>
   
-Ver resultado de [Autoexe]("https://www.virustotal.com/gui/file/9988d8ba90ad03359e79be815032e616d1f76432a12208c659b1cd2a8a719f7b/detection")
+<a href="https://www.virustotal.com/gui/file/9988d8ba90ad03359e79be815032e616d1f76432a12208c659b1cd2a8a719f7b/detection">Autoexe</a>
 
 ## Capturas
 
