@@ -91,7 +91,7 @@ def generate(_):
                 "pyinstaller",
                 "--onefile",
                 "--icon",
-                variablesConfig["build.icon"],
+                variablesConfig["build.icon"] if variablesConfig["build.icon"] else "",
                 "--noconsole",
                 ofuscated_path,
             ],
