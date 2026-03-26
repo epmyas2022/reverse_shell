@@ -73,6 +73,15 @@ def read_payload():
     )
 
 
+def get_icon():
+    if (
+        variablesConfig["build.icon"] is not None
+        and variablesConfig["build.icon"] != ""
+    ):
+        return ["--icon", variablesConfig["build.icon"]]
+    return []
+
+
 def generate(_):
     try:
         payload = read_payload()
@@ -89,9 +98,9 @@ def generate(_):
         subprocess.run(
             [
                 "pyinstaller",
+                "--clean",
                 "--onefile",
-                "--icon",
-                variablesConfig["build.icon"] if variablesConfig["build.icon"] else "",
+                *get_icon(),
                 "--noconsole",
                 ofuscated_path,
             ],
@@ -183,14 +192,15 @@ def hiddenexe(_):
 
     print(f"{Color.OKGREEN}Building hiddenexe{Color.DEFAULT}")
 
+
     output = subprocess.run(
         [
             "pyinstaller",
+            "--clean",
             "--onefile",
             "--add-data",
             f"{variablesConfig['windows.hiddenexe.path']};.",
-            "--icon",
-            variablesConfig["build.icon"],
+            *get_icon(),
             "--noconsole",
             temp,
         ],
@@ -223,8 +233,7 @@ def autoexe(_):
         [
             "pyinstaller",
             "--hidden-import=win32timezone",
-            "--icon",
-            variablesConfig["build.icon"],
+            *get_icon(),
             "--add-data",
             f"{path};.",
             "--onefile",
