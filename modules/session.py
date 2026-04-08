@@ -9,6 +9,7 @@ class Server:
         self.host = host
         self.port = port
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind((self.host, self.port))
         self.server.listen(5)
         self.server.settimeout(1)
@@ -50,6 +51,15 @@ class Session:
     def __init__(self, host, port):
         self.server = Server(host, port)
         self.client_socket = None
+    
+    def _receiveAll(self, n):
+        data = b""
+        while len(data) < n:
+            part = self.client_socket.recv(n - len(data))
+            if not part:
+                return None
+            data += part
+        return data
 
     def start(self):
         try:
@@ -71,10 +81,18 @@ class Session:
                 self.server.send(self.client_socket, command.encode("utf-8"))
 
                 try:
-                    response = self.client_socket.recv(6000).decode("utf-8")
-                    print(response)
+                    raw_length = self.client_socket.recv(4)
+                    if not raw_length:
+                        print(f"{Color.WARNING}[!]{Color.DEFAULT} Connection closed")
+                        self.client_socket = None
+                        continue
+                    length = struct.unpack("!I", raw_length)[0]
+                    response = self._receiveAll(length)
+                    if response:
+                        print(response.decode("utf-8"))
                 except socket.timeout:
                     print(f"{Color.WARNING}[!]{Color.DEFAULT} No response from client")
+                    self.client_socket = None
                 except socket.error as e:
                     print(f"{Color.FAIL}[!]{Color.DEFAULT} Error receiving data: {e}")
                     self.client_socket = None

