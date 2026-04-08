@@ -83,9 +83,8 @@ class Session:
                 try:
                     raw_length = self.client_socket.recv(4)
                     if not raw_length:
-                        print(f"{Color.WARNING}[!]{Color.DEFAULT} Connection closed")
-                        self.client_socket = None
-                        continue
+                        print(f"{Color.WARNING}[!]{Color.DEFAULT} Connection closed by client")
+                        break
                     length = struct.unpack("!I", raw_length)[0]
                     response = self._receiveAll(length)
                     if response:
