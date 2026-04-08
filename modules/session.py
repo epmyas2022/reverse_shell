@@ -1,6 +1,7 @@
 import socket
 from modules.color import Color
 import signal
+import struct
 
 
 class Server:
@@ -34,7 +35,8 @@ class Server:
     def send(self, client_socket, data):
         if self.running and client_socket:
             try:
-                client_socket.send(data)
+                length = struct.pack("!I", len(data))
+                client_socket.sendall(length + data)
             except socket.error as e:
                 print(f"{Color.FAIL}[!]{Color.DEFAULT} Error sending data: {e}")
 
@@ -66,10 +68,10 @@ class Session:
                 if command.lower() == "exit":
                     break
 
-                self.server.send(self.client_socket, command.encode())
+                self.server.send(self.client_socket, command.encode("utf-8"))
 
                 try:
-                    response = self.client_socket.recv(6000).decode()
+                    response = self.client_socket.recv(6000).decode("utf-8")
                     print(response)
                 except socket.timeout:
                     print(f"{Color.WARNING}[!]{Color.DEFAULT} No response from client")
