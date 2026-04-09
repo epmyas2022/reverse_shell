@@ -28,7 +28,7 @@ variablesConfig: dict = {
 
 def load_banner():
     with open("banner.txt", "r") as banner:
-        print(banner.read())
+        print(f"{banner.read()}{Color.DEFAULT}".format(Color=Color))
 
 
 def set_var(command):

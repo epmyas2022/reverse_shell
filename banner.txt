@@ -1,7 +1,11 @@
-  _____                                    _          _ _ 
- |  __ \                                  | |        | | |
- | |__) |_____   _____ _ __ ___  ___   ___| |__   ___| | |
- |  _  // _ \ \ / / _ \ '__/ __|/ _ \ / __| '_ \ / _ \ | |
- | | \ \  __/\ V /  __/ |  \__ \  __/ \__ \ | | |  __/ | |
- |_|  \_\___| \_/ \___|_|  |___/\___| |___/_| |_|\___|_|_|
-
+{Color.BOLD}
+{Color.DEFAULT}______                             {Color.OKGREEN}  _____ _          _ _ 
+{Color.DEFAULT}| ___ \                            {Color.OKGREEN} /  ___| |        | | |
+{Color.DEFAULT}| |_/ /_____   _____ _ __ ___  ___ {Color.OKGREEN} \ `--.| |__   ___| | |
+{Color.DEFAULT}|    // _ \ \ / / _ \ '__/ __|/ _ \{Color.OKGREEN}  `--. \ '_ \ / _ \ | |
+{Color.DEFAULT}| |\ \  __/\ V /  __/ |  \__ \  __/{Color.OKGREEN} /\__/ / | | |  __/ | |
+{Color.DEFAULT}\_| \_\___| \_/ \___|_|  |___/\___|{Color.OKGREEN} \____/|_| |_|\___|_|_|
+                                                          
+{Color.DEFAULT}version 1.0                         {Color.OKBLUE}{Color.UNDERLINE} @github.com/epmyas2022
+{Color.ENDC}
+{Color.BOLD}
